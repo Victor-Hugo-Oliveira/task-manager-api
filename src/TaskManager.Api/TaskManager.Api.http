@@ -1,8 +1,31 @@
 @baseUrl = http://localhost:5110
 
+### Register (run once)
+POST {{baseUrl}}/api/auth/register
+Content-Type: application/json
+
+{
+  "name": "Dev User",
+  "email": "dev@example.com",
+  "password": "Password123"
+}
+
+### Login — the token below is reused by every task request
+# @name login
+POST {{baseUrl}}/api/auth/login
+Content-Type: application/json
+
+{
+  "email": "dev@example.com",
+  "password": "Password123"
+}
+
+@token = {{login.response.body.$.accessToken}}
+
 ### Create a task
 # @name create
 POST {{baseUrl}}/api/tasks
+Authorization: Bearer {{token}}
 Content-Type: application/json
 
 {
@@ -14,18 +37,23 @@ Content-Type: application/json
 
 ### List tasks (default: newest first, 10 per page)
 GET {{baseUrl}}/api/tasks
+Authorization: Bearer {{token}}
 
 ### Filter, search, sort and paginate
 GET {{baseUrl}}/api/tasks?status=Pending&priority=High&search=entity&sortBy=DueDate&sortDirection=Asc&page=1&pageSize=20
+Authorization: Bearer {{token}}
 
 ### Summary (counts by status, overdue, completion rate)
 GET {{baseUrl}}/api/tasks/summary
+Authorization: Bearer {{token}}
 
 ### Get one task
 GET {{baseUrl}}/api/tasks/{{create.response.body.$.id}}
+Authorization: Bearer {{token}}
 
 ### Update a task
 PUT {{baseUrl}}/api/tasks/{{create.response.body.$.id}}
+Authorization: Bearer {{token}}
 Content-Type: application/json
 
 {
@@ -37,6 +65,7 @@ Content-Type: application/json
 
 ### Mark as done
 PATCH {{baseUrl}}/api/tasks/{{create.response.body.$.id}}/status
+Authorization: Bearer {{token}}
 Content-Type: application/json
 
 {
@@ -45,3 +74,4 @@ Content-Type: application/json
 
 ### Delete a task
 DELETE {{baseUrl}}/api/tasks/{{create.response.body.$.id}}
+Authorization: Bearer {{token}}

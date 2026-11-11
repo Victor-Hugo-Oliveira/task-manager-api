@@ -1,10 +1,14 @@
+using System.Text;
 using System.Text.Json.Serialization;
-using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.IdentityModel.Tokens;
 using Scalar.AspNetCore;
 using TaskManager.Api.Infrastructure;
 using TaskManager.Application;
+using TaskManager.Application.Interfaces;
 using TaskManager.Infrastructure;
+using TaskManager.Infrastructure.Authentication;
 using TaskManager.Infrastructure.Persistence;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -12,6 +16,30 @@ var builder = WebApplication.CreateBuilder(args);
 builder.Services
     .AddApplication()
     .AddInfrastructure(builder.Configuration);
+
+// Authentication: validate the JWTs issued by JwtTokenService.
+var jwt = builder.Configuration.GetSection(JwtSettings.SectionName).Get<JwtSettings>() ?? new JwtSettings();
+builder.Services
+    .AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
+    .AddJwtBearer(options =>
+    {
+        options.MapInboundClaims = false; // keep "sub", "email"... instead of long XML claim URIs
+        options.TokenValidationParameters = new TokenValidationParameters
+        {
+            ValidateIssuer = true,
+            ValidIssuer = jwt.Issuer,
+            ValidateAudience = true,
+            ValidAudience = jwt.Audience,
+            ValidateIssuerSigningKey = true,
+            IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(jwt.Secret)),
+            ValidateLifetime = true,
+            ClockSkew = TimeSpan.FromSeconds(30)
+        };
+    });
+builder.Services.AddAuthorization();
+
+builder.Services.AddHttpContextAccessor();
+builder.Services.AddScoped<ICurrentUser, CurrentUser>();
 
 builder.Services
     .AddControllers(options =>
@@ -34,12 +62,12 @@ builder.Services.AddProblemDetails(options =>
     });
 builder.Services.AddExceptionHandler<GlobalExceptionHandler>();
 
-builder.Services.AddOpenApi();
+builder.Services.AddOpenApi(options => options.AddDocumentTransformer<BearerSecuritySchemeTransformer>());
 
 var app = builder.Build();
 
 app.UseExceptionHandler();
-app.UseStatusCodePages(); // ProblemDetails body for bare 404/405 etc.
+app.UseStatusCodePages(); // ProblemDetails body for bare 401/404/405 etc.
 
 if (app.Environment.IsDevelopment())
 {
@@ -52,6 +80,7 @@ if (app.Environment.IsDevelopment())
 }
 
 app.UseHttpsRedirection();
+app.UseAuthentication();
 app.UseAuthorization();
 app.MapControllers();
 

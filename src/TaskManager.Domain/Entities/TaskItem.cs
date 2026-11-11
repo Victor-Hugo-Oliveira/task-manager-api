@@ -21,12 +21,16 @@ public class TaskItem
     public DateTime? UpdatedAt { get; private set; }
     public DateTime? CompletedAt { get; private set; }
 
+    /// <summary>Owner of the task. Users can only see and change their own tasks.</summary>
+    public Guid UserId { get; private set; }
+
     // Required by EF Core.
     private TaskItem() { }
 
-    public TaskItem(string title, string? description, TaskPriority priority, DateTime? dueDate)
+    public TaskItem(Guid userId, string title, string? description, TaskPriority priority, DateTime? dueDate)
     {
         Id = Guid.NewGuid();
+        UserId = userId;
         Title = title.Trim();
         Description = NormalizeDescription(description);
         Priority = priority;

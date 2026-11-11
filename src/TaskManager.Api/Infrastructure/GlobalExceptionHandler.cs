@@ -32,6 +32,20 @@ public class GlobalExceptionHandler(
                 Detail = ex.Message
             },
 
+            UnauthorizedException ex => new ProblemDetails
+            {
+                Status = StatusCodes.Status401Unauthorized,
+                Title = "Unauthorized.",
+                Detail = ex.Message
+            },
+
+            ConflictException ex => new ProblemDetails
+            {
+                Status = StatusCodes.Status409Conflict,
+                Title = "Conflict.",
+                Detail = ex.Message
+            },
+
             _ => new ProblemDetails
             {
                 Status = StatusCodes.Status500InternalServerError,

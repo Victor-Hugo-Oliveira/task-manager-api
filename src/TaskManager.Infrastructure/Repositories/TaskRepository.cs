@@ -19,9 +19,9 @@ public class TaskRepository(AppDbContext db) : ITaskRepository
         t.Status == TaskItemStatus.Done ? 2 : t.Status == TaskItemStatus.InProgress ? 1 : 0;
 
     public async Task<(IReadOnlyList<TaskItem> Items, int TotalCount)> GetPagedAsync(
-        TaskQueryParameters query, CancellationToken ct = default)
+        Guid userId, TaskQueryParameters query, CancellationToken ct = default)
     {
-        var tasks = db.Tasks.AsNoTracking();
+        var tasks = db.Tasks.AsNoTracking().Where(t => t.UserId == userId);
 
         if (query.Status is { } status)
             tasks = tasks.Where(t => t.Status == status);
@@ -47,20 +47,22 @@ public class TaskRepository(AppDbContext db) : ITaskRepository
         return (items, totalCount);
     }
 
-    public async Task<IReadOnlyDictionary<TaskItemStatus, int>> CountByStatusAsync(CancellationToken ct = default) =>
+    public async Task<IReadOnlyDictionary<TaskItemStatus, int>> CountByStatusAsync(Guid userId, CancellationToken ct = default) =>
         await db.Tasks
+            .Where(t => t.UserId == userId)
             .GroupBy(t => t.Status)
             .Select(g => new { Status = g.Key, Count = g.Count() })
             .ToDictionaryAsync(x => x.Status, x => x.Count, ct);
 
-    public Task<int> CountOverdueAsync(DateTime nowUtc, CancellationToken ct = default) =>
+    public Task<int> CountOverdueAsync(Guid userId, DateTime nowUtc, CancellationToken ct = default) =>
         db.Tasks.CountAsync(t =>
+            t.UserId == userId &&
             t.Status != TaskItemStatus.Done &&
             t.DueDate != null &&
             t.DueDate < nowUtc, ct);
 
-    public Task<TaskItem?> GetByIdAsync(Guid id, CancellationToken ct = default) =>
-        db.Tasks.FirstOrDefaultAsync(t => t.Id == id, ct);
+    public Task<TaskItem?> GetByIdAsync(Guid userId, Guid id, CancellationToken ct = default) =>
+        db.Tasks.FirstOrDefaultAsync(t => t.Id == id && t.UserId == userId, ct);
 
     public async Task AddAsync(TaskItem task, CancellationToken ct = default) =>
         await db.Tasks.AddAsync(task, ct);

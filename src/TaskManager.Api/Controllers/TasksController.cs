@@ -1,3 +1,4 @@
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using TaskManager.Application.Common.Models;
 using TaskManager.Application.Tasks;
@@ -9,7 +10,9 @@ namespace TaskManager.Api.Controllers;
 /// ProblemDetails by GlobalExceptionHandler, so actions only handle the happy path.
 /// </remarks>
 [ApiController]
+[Authorize]
 [Route("api/tasks")]
+[ProducesResponseType<ProblemDetails>(StatusCodes.Status401Unauthorized, "application/problem+json")]
 [Produces("application/json")]
 public class TasksController(ITaskService taskService) : ControllerBase
 {

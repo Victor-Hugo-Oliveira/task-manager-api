@@ -21,6 +21,7 @@ public interface ITaskService
 /// <summary>
 /// Validates input and throws <see cref="ValidationException"/> or <see cref="NotFoundException"/>;
 /// the API's global exception handler turns those into 400/404 ProblemDetails responses.
+/// All operations are scoped to the authenticated user; another user's task looks like "not found" (404).
 /// </summary>
 public class TaskService(
     ITaskRepository repository,
@@ -28,13 +29,14 @@ public class TaskService(
     IValidator<UpdateTaskRequest> updateValidator,
     IValidator<UpdateTaskStatusRequest> statusValidator,
     IValidator<TaskQueryParameters> queryValidator,
-    TimeProvider timeProvider) : ITaskService
+    TimeProvider timeProvider,
+    ICurrentUser currentUser) : ITaskService
 {
     public async Task<PagedResponse<TaskResponse>> GetPagedAsync(TaskQueryParameters query, CancellationToken ct = default)
     {
         await queryValidator.ValidateAndThrowAsync(query, ct);
 
-        var (items, totalCount) = await repository.GetPagedAsync(query, ct);
+        var (items, totalCount) = await repository.GetPagedAsync(currentUser.UserId, query, ct);
         return new PagedResponse<TaskResponse>(
             items.Select(TaskResponse.FromEntity).ToList(),
             query.Page,
@@ -44,8 +46,8 @@ public class TaskService(
 
     public async Task<TaskSummaryResponse> GetSummaryAsync(CancellationToken ct = default)
     {
-        var byStatus = await repository.CountByStatusAsync(ct);
-        var overdue = await repository.CountOverdueAsync(timeProvider.GetUtcNow().UtcDateTime, ct);
+        var byStatus = await repository.CountByStatusAsync(currentUser.UserId, ct);
+        var overdue = await repository.CountOverdueAsync(currentUser.UserId, timeProvider.GetUtcNow().UtcDateTime, ct);
 
         int Count(TaskItemStatus s) => byStatus.GetValueOrDefault(s);
         var total = byStatus.Values.Sum();
@@ -70,7 +72,7 @@ public class TaskService(
     {
         await createValidator.ValidateAndThrowAsync(request, ct);
 
-        var task = new TaskItem(request.Title, request.Description, request.Priority, request.DueDate);
+        var task = new TaskItem(currentUser.UserId, request.Title, request.Description, request.Priority, request.DueDate);
         await repository.AddAsync(task, ct);
         await repository.SaveChangesAsync(ct);
         return TaskResponse.FromEntity(task);
@@ -104,5 +106,5 @@ public class TaskService(
     }
 
     private async Task<TaskItem> GetTaskOrThrowAsync(Guid id, CancellationToken ct) =>
-        await repository.GetByIdAsync(id, ct) ?? throw new NotFoundException("Task", id);
+        await repository.GetByIdAsync(currentUser.UserId, id, ct) ?? throw new NotFoundException("Task", id);
 }
