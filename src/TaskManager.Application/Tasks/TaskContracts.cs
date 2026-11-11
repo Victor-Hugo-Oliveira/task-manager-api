@@ -1,20 +1,19 @@
-using System.ComponentModel.DataAnnotations;
 using TaskManager.Domain.Entities;
 using TaskManager.Domain.Enums;
 
 namespace TaskManager.Application.Tasks;
 
-// Basic validation with data annotations for now; Phase 2 replaces it with FluentValidation.
+// Request validation lives in TaskValidators.cs (FluentValidation).
 
 public record CreateTaskRequest(
-    [Required, MaxLength(TaskItem.TitleMaxLength)] string Title,
-    [MaxLength(TaskItem.DescriptionMaxLength)] string? Description,
+    string Title,
+    string? Description,
     TaskPriority Priority = TaskPriority.Medium,
     DateTime? DueDate = null);
 
 public record UpdateTaskRequest(
-    [Required, MaxLength(TaskItem.TitleMaxLength)] string Title,
-    [MaxLength(TaskItem.DescriptionMaxLength)] string? Description,
+    string Title,
+    string? Description,
     TaskPriority Priority,
     DateTime? DueDate);
 

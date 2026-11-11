@@ -28,7 +28,7 @@ public class TaskItem
     {
         Id = Guid.NewGuid();
         Title = title.Trim();
-        Description = description?.Trim();
+        Description = NormalizeDescription(description);
         Priority = priority;
         DueDate = dueDate;
         Status = TaskItemStatus.Pending;
@@ -38,7 +38,7 @@ public class TaskItem
     public void Update(string title, string? description, TaskPriority priority, DateTime? dueDate)
     {
         Title = title.Trim();
-        Description = description?.Trim();
+        Description = NormalizeDescription(description);
         Priority = priority;
         DueDate = dueDate;
         UpdatedAt = DateTime.UtcNow;
@@ -52,4 +52,7 @@ public class TaskItem
         CompletedAt = status == TaskItemStatus.Done ? DateTime.UtcNow : null;
         UpdatedAt = DateTime.UtcNow;
     }
+
+    private static string? NormalizeDescription(string? description) =>
+        string.IsNullOrWhiteSpace(description) ? null : description.Trim();
 }
