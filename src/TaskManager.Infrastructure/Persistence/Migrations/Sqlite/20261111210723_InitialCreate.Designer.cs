@@ -8,11 +8,11 @@ using TaskManager.Infrastructure.Persistence;
 
 #nullable disable
 
-namespace TaskManager.Infrastructure.Persistence.Migrations
+namespace TaskManager.Infrastructure.Persistence.Migrations.Sqlite
 {
-    [DbContext(typeof(AppDbContext))]
-    [Migration("20261111212136_AddTaskQueryIndexes")]
-    partial class AddTaskQueryIndexes
+    [DbContext(typeof(SqliteAppDbContext))]
+    [Migration("20261111210723_InitialCreate")]
+    partial class InitialCreate
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
@@ -58,12 +58,6 @@ namespace TaskManager.Infrastructure.Persistence.Migrations
                         .HasColumnType("TEXT");
 
                     b.HasKey("Id");
-
-                    b.HasIndex("CreatedAt");
-
-                    b.HasIndex("DueDate");
-
-                    b.HasIndex("Priority");
 
                     b.HasIndex("Status");
 

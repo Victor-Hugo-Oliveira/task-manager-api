@@ -64,6 +64,9 @@ builder.Services.AddExceptionHandler<GlobalExceptionHandler>();
 
 builder.Services.AddOpenApi(options => options.AddDocumentTransformer<BearerSecuritySchemeTransformer>());
 
+// GET /health → 200 "Healthy" when the API is up and the database answers.
+builder.Services.AddHealthChecks().AddDbContextCheck<AppDbContext>("database");
+
 var app = builder.Build();
 
 app.UseExceptionHandler();
@@ -73,8 +76,11 @@ if (app.Environment.IsDevelopment())
 {
     app.MapOpenApi();
     app.MapScalarApiReference(); // UI at /scalar
+}
 
-    // Apply pending migrations automatically in development.
+// Apply pending migrations at startup in development, or when explicitly enabled (Docker).
+if (app.Environment.IsDevelopment() || app.Configuration.GetValue<bool>("Database:MigrateOnStartup"))
+{
     using var scope = app.Services.CreateScope();
     scope.ServiceProvider.GetRequiredService<AppDbContext>().Database.Migrate();
 }
@@ -83,6 +89,7 @@ app.UseHttpsRedirection();
 app.UseAuthentication();
 app.UseAuthorization();
 app.MapControllers();
+app.MapHealthChecks("/health");
 
 app.Run();
 

@@ -1,0 +1,38 @@
+# Local demo: API + PostgreSQL with one command.
+#   docker compose up --build
+# Then open http://localhost:8080/scalar
+#
+# Values below are demo defaults. Override them with environment variables
+# or a .env file (POSTGRES_PASSWORD, JWT_SECRET) — never use them in production.
+
+services:
+  db:
+    image: postgres:17-alpine
+    environment:
+      POSTGRES_DB: taskmanager
+      POSTGRES_USER: taskmanager
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-taskmanager}
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U taskmanager -d taskmanager"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+
+  api:
+    build: .
+    ports:
+      - "8080:8080"
+    environment:
+      ASPNETCORE_ENVIRONMENT: Development # enables /scalar for the demo
+      Database__Provider: Postgres
+      Database__MigrateOnStartup: "true"
+      ConnectionStrings__DefaultConnection: Host=db;Port=5432;Database=taskmanager;Username=taskmanager;Password=${POSTGRES_PASSWORD:-taskmanager}
+      Jwt__Secret: ${JWT_SECRET:-docker-demo-secret-change-me-0123456789abcdef}
+    depends_on:
+      db:
+        condition: service_healthy
+
+volumes:
+  pgdata:

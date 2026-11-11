@@ -7,10 +7,10 @@ using TaskManager.Infrastructure.Persistence;
 
 #nullable disable
 
-namespace TaskManager.Infrastructure.Persistence.Migrations
+namespace TaskManager.Infrastructure.Persistence.Migrations.Sqlite
 {
-    [DbContext(typeof(AppDbContext))]
-    partial class AppDbContextModelSnapshot : ModelSnapshot
+    [DbContext(typeof(SqliteAppDbContext))]
+    partial class SqliteAppDbContextModelSnapshot : ModelSnapshot
     {
         protected override void BuildModel(ModelBuilder modelBuilder)
         {

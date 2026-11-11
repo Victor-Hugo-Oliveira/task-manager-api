@@ -15,7 +15,22 @@ public static class DependencyInjection
         var connectionString = configuration.GetConnectionString("DefaultConnection")
             ?? throw new InvalidOperationException("Connection string 'DefaultConnection' not found.");
 
-        services.AddDbContext<AppDbContext>(options => options.UseSqlite(connectionString));
+        // "Database:Provider" = Sqlite (default) | Postgres
+        var provider = configuration["Database:Provider"] ?? "Sqlite";
+        switch (provider.ToLowerInvariant())
+        {
+            case "sqlite":
+                services.AddDbContext<SqliteAppDbContext>(o => o.UseSqlite(connectionString));
+                services.AddScoped<AppDbContext>(sp => sp.GetRequiredService<SqliteAppDbContext>());
+                break;
+            case "postgres":
+                services.AddDbContext<PostgresAppDbContext>(o => o.UseNpgsql(connectionString));
+                services.AddScoped<AppDbContext>(sp => sp.GetRequiredService<PostgresAppDbContext>());
+                break;
+            default:
+                throw new InvalidOperationException($"Unsupported Database:Provider '{provider}'. Use 'Sqlite' or 'Postgres'.");
+        }
+
         services.AddScoped<ITaskRepository, TaskRepository>();
         services.AddScoped<IUserRepository, UserRepository>();
 

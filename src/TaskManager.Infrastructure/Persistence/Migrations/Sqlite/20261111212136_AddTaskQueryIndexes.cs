@@ -2,7 +2,7 @@
 
 #nullable disable
 
-namespace TaskManager.Infrastructure.Persistence.Migrations
+namespace TaskManager.Infrastructure.Persistence.Migrations.Sqlite
 {
     /// <inheritdoc />
     public partial class AddTaskQueryIndexes : Migration
