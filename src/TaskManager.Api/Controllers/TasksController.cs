@@ -1,4 +1,5 @@
 using Microsoft.AspNetCore.Mvc;
+using TaskManager.Application.Common.Models;
 using TaskManager.Application.Tasks;
 
 namespace TaskManager.Api.Controllers;
@@ -12,11 +13,19 @@ namespace TaskManager.Api.Controllers;
 [Produces("application/json")]
 public class TasksController(ITaskService taskService) : ControllerBase
 {
-    /// <summary>Lists all tasks, newest first.</summary>
+    /// <summary>Lists tasks with optional filters, search, sorting and pagination.</summary>
+    /// <remarks>Example: <c>GET /api/tasks?status=Pending&amp;search=report&amp;sortBy=DueDate&amp;sortDirection=Asc&amp;page=1&amp;pageSize=20</c></remarks>
     [HttpGet]
-    [ProducesResponseType<IReadOnlyList<TaskResponse>>(StatusCodes.Status200OK)]
-    public async Task<IActionResult> GetAll(CancellationToken ct) =>
-        Ok(await taskService.GetAllAsync(ct));
+    [ProducesResponseType<PagedResponse<TaskResponse>>(StatusCodes.Status200OK)]
+    [ProducesResponseType<ValidationProblemDetails>(StatusCodes.Status400BadRequest, "application/problem+json")]
+    public async Task<IActionResult> GetAll([FromQuery] TaskQueryParameters query, CancellationToken ct) =>
+        Ok(await taskService.GetPagedAsync(query, ct));
+
+    /// <summary>Counts tasks by status, plus overdue tasks and completion rate.</summary>
+    [HttpGet("summary")]
+    [ProducesResponseType<TaskSummaryResponse>(StatusCodes.Status200OK)]
+    public async Task<IActionResult> GetSummary(CancellationToken ct) =>
+        Ok(await taskService.GetSummaryAsync(ct));
 
     /// <summary>Gets a single task by id.</summary>
     [HttpGet("{id:guid}")]

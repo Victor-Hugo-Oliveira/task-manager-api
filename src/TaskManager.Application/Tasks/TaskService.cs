@@ -1,13 +1,16 @@
 using FluentValidation;
 using TaskManager.Application.Common.Exceptions;
+using TaskManager.Application.Common.Models;
 using TaskManager.Application.Interfaces;
 using TaskManager.Domain.Entities;
+using TaskManager.Domain.Enums;
 
 namespace TaskManager.Application.Tasks;
 
 public interface ITaskService
 {
-    Task<IReadOnlyList<TaskResponse>> GetAllAsync(CancellationToken ct = default);
+    Task<PagedResponse<TaskResponse>> GetPagedAsync(TaskQueryParameters query, CancellationToken ct = default);
+    Task<TaskSummaryResponse> GetSummaryAsync(CancellationToken ct = default);
     Task<TaskResponse> GetByIdAsync(Guid id, CancellationToken ct = default);
     Task<TaskResponse> CreateAsync(CreateTaskRequest request, CancellationToken ct = default);
     Task<TaskResponse> UpdateAsync(Guid id, UpdateTaskRequest request, CancellationToken ct = default);
@@ -23,12 +26,38 @@ public class TaskService(
     ITaskRepository repository,
     IValidator<CreateTaskRequest> createValidator,
     IValidator<UpdateTaskRequest> updateValidator,
-    IValidator<UpdateTaskStatusRequest> statusValidator) : ITaskService
+    IValidator<UpdateTaskStatusRequest> statusValidator,
+    IValidator<TaskQueryParameters> queryValidator,
+    TimeProvider timeProvider) : ITaskService
 {
-    public async Task<IReadOnlyList<TaskResponse>> GetAllAsync(CancellationToken ct = default)
+    public async Task<PagedResponse<TaskResponse>> GetPagedAsync(TaskQueryParameters query, CancellationToken ct = default)
     {
-        var tasks = await repository.GetAllAsync(ct);
-        return tasks.Select(TaskResponse.FromEntity).ToList();
+        await queryValidator.ValidateAndThrowAsync(query, ct);
+
+        var (items, totalCount) = await repository.GetPagedAsync(query, ct);
+        return new PagedResponse<TaskResponse>(
+            items.Select(TaskResponse.FromEntity).ToList(),
+            query.Page,
+            query.PageSize,
+            totalCount);
+    }
+
+    public async Task<TaskSummaryResponse> GetSummaryAsync(CancellationToken ct = default)
+    {
+        var byStatus = await repository.CountByStatusAsync(ct);
+        var overdue = await repository.CountOverdueAsync(timeProvider.GetUtcNow().UtcDateTime, ct);
+
+        int Count(TaskItemStatus s) => byStatus.GetValueOrDefault(s);
+        var total = byStatus.Values.Sum();
+        var done = Count(TaskItemStatus.Done);
+
+        return new TaskSummaryResponse(
+            Total: total,
+            Pending: Count(TaskItemStatus.Pending),
+            InProgress: Count(TaskItemStatus.InProgress),
+            Done: done,
+            Overdue: overdue,
+            CompletionRate: total == 0 ? 0 : Math.Round(done * 100.0 / total, 1));
     }
 
     public async Task<TaskResponse> GetByIdAsync(Guid id, CancellationToken ct = default)

@@ -42,6 +42,26 @@ public class UpdateTaskRequestValidator : AbstractValidator<UpdateTaskRequest>
     }
 }
 
+public class TaskQueryParametersValidator : AbstractValidator<TaskQueryParameters>
+{
+    public TaskQueryParametersValidator()
+    {
+        RuleFor(x => x.Status).IsInEnum();
+        RuleFor(x => x.Priority).IsInEnum();
+        RuleFor(x => x.SortBy).IsInEnum();
+        RuleFor(x => x.SortDirection).IsInEnum();
+
+        RuleFor(x => x.Search)
+            .MaximumLength(TaskQueryParameters.MaxSearchLength);
+
+        RuleFor(x => x.Page)
+            .GreaterThanOrEqualTo(1);
+
+        RuleFor(x => x.PageSize)
+            .InclusiveBetween(1, TaskQueryParameters.MaxPageSize);
+    }
+}
+
 public class UpdateTaskStatusRequestValidator : AbstractValidator<UpdateTaskStatusRequest>
 {
     public UpdateTaskStatusRequestValidator()

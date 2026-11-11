@@ -12,8 +12,14 @@ Content-Type: application/json
   "dueDate": "2026-12-01T00:00:00Z"
 }
 
-### List tasks
+### List tasks (default: newest first, 10 per page)
 GET {{baseUrl}}/api/tasks
+
+### Filter, search, sort and paginate
+GET {{baseUrl}}/api/tasks?status=Pending&priority=High&search=entity&sortBy=DueDate&sortDirection=Asc&page=1&pageSize=20
+
+### Summary (counts by status, overdue, completion rate)
+GET {{baseUrl}}/api/tasks/summary
 
 ### Get one task
 GET {{baseUrl}}/api/tasks/{{create.response.body.$.id}}

@@ -56,6 +56,12 @@ namespace TaskManager.Infrastructure.Persistence.Migrations
 
                     b.HasKey("Id");
 
+                    b.HasIndex("CreatedAt");
+
+                    b.HasIndex("DueDate");
+
+                    b.HasIndex("Priority");
+
                     b.HasIndex("Status");
 
                     b.ToTable("Tasks", (string)null);

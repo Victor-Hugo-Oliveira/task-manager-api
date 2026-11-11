@@ -22,6 +22,10 @@ public class TaskItemConfiguration : IEntityTypeConfiguration<TaskItem>
         builder.Property(t => t.Status).HasConversion<string>().HasMaxLength(20);
         builder.Property(t => t.Priority).HasConversion<string>().HasMaxLength(20);
 
+        // Columns used for filtering and sorting in GET /api/tasks.
         builder.HasIndex(t => t.Status);
+        builder.HasIndex(t => t.Priority);
+        builder.HasIndex(t => t.DueDate);
+        builder.HasIndex(t => t.CreatedAt);
     }
 }
