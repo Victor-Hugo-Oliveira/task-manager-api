@@ -1,0 +1,41 @@
+@baseUrl = http://localhost:5110
+
+### Create a task
+# @name create
+POST {{baseUrl}}/api/tasks
+Content-Type: application/json
+
+{
+  "title": "Estudar Entity Framework",
+  "description": "Ler sobre migrations e relacionamentos",
+  "priority": "High",
+  "dueDate": "2026-12-01T00:00:00Z"
+}
+
+### List tasks
+GET {{baseUrl}}/api/tasks
+
+### Get one task
+GET {{baseUrl}}/api/tasks/{{create.response.body.$.id}}
+
+### Update a task
+PUT {{baseUrl}}/api/tasks/{{create.response.body.$.id}}
+Content-Type: application/json
+
+{
+  "title": "Estudar EF Core",
+  "description": "Migrations, relacionamentos e consultas",
+  "priority": "Medium",
+  "dueDate": "2026-12-05T00:00:00Z"
+}
+
+### Mark as done
+PATCH {{baseUrl}}/api/tasks/{{create.response.body.$.id}}/status
+Content-Type: application/json
+
+{
+  "status": "Done"
+}
+
+### Delete a task
+DELETE {{baseUrl}}/api/tasks/{{create.response.body.$.id}}
